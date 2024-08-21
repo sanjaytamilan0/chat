@@ -1,44 +1,54 @@
-import 'dart:math';
 
-import 'package:chatapp/register_screen/login_screen/login_screen.dart';
 import 'package:chatapp/utills/colors.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:chatapp/reverpod/auth_providers/auth_notifier.dart';
+import 'package:chatapp/reverpod/auth_providers/user_auth.dart';
 
-class RegisterScreen extends StatefulWidget {
+
+class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _phoneController = TextEditingController();
+  final _nameController = TextEditingController();
 
   final email = FocusNode();
   final password = FocusNode();
-  final phone = FocusNode();
-
-  String _selectedCountryCode = '+1';
-
-  final List<Map<String, String>> _countryCodes = [
-    {'code': '+91'},
-    {'code': '+92'},
-    {'code': '+1'},
-  ];
+  final name = FocusNode();
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _phoneController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
+
+  Future<void> createUserInFirestore(String userId, String email,String name) async {
+    final userDoc = FirebaseFirestore.instance.collection('Users').doc(userId);
+
+    await userDoc.set({
+      'id':userId,
+      'email': email,
+      'createdAt': Timestamp.now(),
+      'name':name
+    });
+  }
+
+
   @override
   Widget build(BuildContext context) {
+    final auth = ref.watch(authProvider);
+    final authNotifier = UserAuth();
     return Scaffold(
       backgroundColor: AppColors.veryLightPink,
       body: SafeArea(
@@ -48,7 +58,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Expanded(
                 flex: 2,
                 child: Container(
-                  padding: EdgeInsets.only(left: 5),
+                  padding: const EdgeInsets.only(left: 5),
                   width: double.maxFinite,
                   decoration: const BoxDecoration(
                       color: AppColors.lightPink,
@@ -61,7 +71,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       IconButton(
                         icon: const Icon(Icons.arrow_back),
                         onPressed: () {
-                          // Navigator.pop(context);
+                          Navigator.pop(context);
                         },
                       ),
                       const Text(
@@ -88,7 +98,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Container(
                 padding: const EdgeInsets.all(10.0),
                 decoration: BoxDecoration(
-                  // color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Form(
@@ -99,50 +108,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         TextFormField(
-                          focusNode: phone,
+                          focusNode: name,
                           onFieldSubmitted: (s) {
                             FocusScope.of(context).requestFocus(email);
                           },
-                          controller: _phoneController,
-                          keyboardType: TextInputType.phone,
+                          controller: _nameController,
+                          // keyboardType: TextInputType.phone,
                           decoration: InputDecoration(
-                            prefixIcon: GestureDetector(
-                              onTap: () async {
-                                // Show a simple dialog to select a country code
-                                final selectedCode = await showDialog<String>(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return SimpleDialog(
-                                      title: const Text('Select Country Code'),
-                                      children: _countryCodes.map((country) {
-                                        return SimpleDialogOption(
-                                          onPressed: () {
-                                            Navigator.pop(
-                                                context, country['code']);
-                                          },
-                                          child: Text(country['code']!),
-                                        );
-                                      }).toList(),
-                                    );
-                                  },
-                                );
-
-                                if (selectedCode != null) {
-                                  setState(() {
-                                    _selectedCountryCode = selectedCode;
-                                  });
-                                }
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.only(left: 10.0),
-                                child: Text(
-                                  _selectedCountryCode,
-                                  style: const TextStyle(fontSize: 16),
-                                ),
-                              ),
-                            ),
-                            labelText: 'Phone Number',
-                            hintText: 'Enter your phone number',
+                            labelText: 'name',
+                            hintText: 'Enter your name',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -175,7 +149,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            suffixIcon: Icon(Icons.visibility_off),
+                            suffixIcon: const Icon(Icons.visibility_off),
                           ),
                         ),
                         const SizedBox(height: 30),
@@ -189,16 +163,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               backgroundColor: AppColors.lightPink,
                             ),
-                            onPressed: () {
+                            onPressed: () async {
                               if (_formKey.currentState?.validate() ?? false) {
-                                // Perform the registration logic
-                                final phoneNumber =
-                                    '$_selectedCountryCode ${_phoneController.text}';
-                                print(
-                                    phoneNumber); // Handle the full phone number
+
+                             await auth.signUp(
+                                  _emailController.text,
+                                  _passwordController.text,
+                                ).then((value) {
+                                  if(value = true){
+                                    final userId = authNotifier.auth.currentUser?.uid ?? '';
+                                    final email = _emailController.text;
+                                    createUserInFirestore(userId,email,_nameController.text);
+                                    Navigator.pushNamed(context, "/login");
+                                  }
+                                  else{
+                                    print(value);
+                                  }
+                             }
+
+                             );
+
+
+
                               }
                             },
-                            child: const Text(
+
+                            child:  const Text(
                               "Register",
                               style: TextStyle(
                                 fontSize: 18,
@@ -218,11 +208,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         padding: const EdgeInsets.all(20),
                         child: TextButton(
                           onPressed: () {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const LoginScreen()));
-                            // Navigate to login screen
+                            Navigator.pushNamed(context, "/login");
                           },
                           child: const Text(
                             "Already have an account? Log in",

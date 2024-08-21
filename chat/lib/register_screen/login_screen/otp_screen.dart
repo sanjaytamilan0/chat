@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'package:chatapp/utills/colors.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:chatapp/bottom_nav_bar.dart';
+
+import 'package:chatapp/reverpod/auth_providers/user_auth.dart';
 
 class OtpScreen extends StatefulWidget {
   const OtpScreen({super.key});
@@ -11,8 +14,10 @@ class OtpScreen extends StatefulWidget {
 }
 
 class _OtpScreenState extends State<OtpScreen> {
+  final auth = UserAuth();
   final _controllers = List.generate(4, (_) => TextEditingController());
   final _focusNodes = List.generate(4, (_) => FocusNode());
+  String? _verificationId; // Variable to store the verification ID
 
   @override
   void initState() {
@@ -24,6 +29,9 @@ class _OtpScreenState extends State<OtpScreen> {
         }
       });
     }
+
+    // Optionally, initialize _verificationId here if you pass it from the previous screen
+    // _verificationId = ModalRoute.of(context)?.settings.arguments as String?;
   }
 
   @override
@@ -37,7 +45,14 @@ class _OtpScreenState extends State<OtpScreen> {
     super.dispose();
   }
 
-  void _onOtpVerify() {
+  String _getOtp() {
+    return _controllers.map((controller) => controller.text).join();
+  }
+
+  Future<void> _onOtpVerify() async {
+    final otp = _getOtp();
+
+
     // Show loading SnackBar
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -50,16 +65,29 @@ class _OtpScreenState extends State<OtpScreen> {
       ),
     );
 
-    Timer(
-      const Duration(seconds: 2),
-      () {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const BottomNavBar(),
-          ),
-        );
-      },
-    );
+    try {
+      // Verify the OTP
+      final credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId!,
+        smsCode: otp,
+      );
+
+      await FirebaseAuth.instance.signInWithCredential(credential);
+
+      // Navigate to BottomNavBar on successful verification
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const BottomNavBar(),
+        ),
+      );
+    } catch (e) {
+      // Handle error, e.g., invalid OTP
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+        ),
+      );
+    }
   }
 
   @override
@@ -69,42 +97,45 @@ class _OtpScreenState extends State<OtpScreen> {
       body: Column(
         children: [
           Expanded(
-              flex: 2,
-              child: Container(
-                padding: const EdgeInsets.only(left: 8),
-                decoration: const BoxDecoration(
-                    color: AppColors.lightPink,
-                    borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(30),
-                        bottomRight: Radius.circular(30))),
-                width: double.maxFinite,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    IconButton(
-                        onPressed: () {}, icon: const Icon(Icons.arrow_back)),
-                    const Text(
-                      "OTP Verification",
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    const Text(
-                      "Please enter your Correct OTP for number Verification Process",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white38,
-                      ),
-                    )
-                  ],
+            flex: 2,
+            child: Container(
+              padding: const EdgeInsets.only(left: 8),
+              decoration: const BoxDecoration(
+                color: AppColors.lightPink,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
                 ),
-              )),
+              ),
+              width: double.infinity,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.arrow_back),
+                  ),
+                  const Text(
+                    "OTP Verification",
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    "Please enter the correct OTP for number verification.",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white38,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           Expanded(
             flex: 6,
             child: Container(
@@ -125,7 +156,8 @@ class _OtpScreenState extends State<OtpScreen> {
                           maxLength: 1,
                           decoration: InputDecoration(
                             border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10)),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                             counterText: "",
                           ),
                           onChanged: (value) {
@@ -149,22 +181,22 @@ class _OtpScreenState extends State<OtpScreen> {
                   ),
                   const SizedBox(height: 20),
                   SizedBox(
-                    width: double.maxFinite,
+                    width: double.infinity,
                     child: TextButton(
                       style: const ButtonStyle(
-                          backgroundColor:
-                              MaterialStatePropertyAll(AppColors.lightPink)),
+                        backgroundColor: MaterialStatePropertyAll(AppColors.lightPink),
+                      ),
                       onPressed: _onOtpVerify,
                       child: const Text("OTP Verify"),
                     ),
                   ),
-                  const SizedBox(
-                    height: 10,
-                  ),
+                  const SizedBox(height: 10),
                   SizedBox(
-                    width: double.maxFinite,
+                    width: double.infinity,
                     child: TextButton(
-                      onPressed: _onOtpVerify,
+                      onPressed: () {
+                        // Implement resend OTP logic if needed
+                      },
                       child: const Text("Re-Send"),
                     ),
                   ),

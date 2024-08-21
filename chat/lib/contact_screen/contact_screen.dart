@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:chatapp/reverpod/auth_providers/user_auth.dart';
 
 class ContactScreen extends StatefulWidget {
   const ContactScreen({super.key});
@@ -8,39 +10,16 @@ class ContactScreen extends StatefulWidget {
 }
 
 class _ContactScreenState extends State<ContactScreen> {
-  final List<String> _contacts = [
-    'Devesh Ojha',
-    'Sanjay text',
-    'Mohit jaiswal',
-    'Suresh nair',
-    'Alex dame',
-    'Stelli forte',
-    'Aman singh',
-    'Mohit tyagi',
-    'Joshep',
-  ];
-
+  final auth = UserAuth();
   String _searchText = '';
 
   @override
   Widget build(BuildContext context) {
-    final filteredContacts = _contacts
-        .where((contact) =>
-            contact.toLowerCase().contains(_searchText.toLowerCase()))
-        .toList();
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.teal,
         title: Row(
           children: [
-            CircleAvatar(
-              child: Text(
-                'J',
-                style: TextStyle(fontSize: 18, color: Colors.white),
-              ),
-              backgroundColor: Colors.white24,
-            ),
             const SizedBox(width: 10),
             Expanded(
               child: TextField(
@@ -58,7 +37,7 @@ class _ContactScreenState extends State<ContactScreen> {
                     borderSide: BorderSide.none,
                   ),
                   contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
                   prefixIcon: const Icon(Icons.search, color: Colors.teal),
                 ),
               ),
@@ -86,23 +65,47 @@ class _ContactScreenState extends State<ContactScreen> {
             ),
           ),
           Expanded(
-            child: ListView.separated(
-              itemBuilder: (_, i) {
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage:
-                        AssetImage('assets/avatar_$i.png'), // Placeholder image
-                  ),
-                  title: Text(
-                    filteredContacts[i],
-                    style: const TextStyle(fontSize: 18),
-                  ),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('Users').snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return const Center(child: Text('Something went wrong'));
+                }
+
+                final currentUserID = auth.auth.currentUser?.uid;
+                final contacts = snapshot.data?.docs ?? [];
+
+                final filteredContacts = contacts.where((doc) {
+                  final name = doc['name'].toString().toLowerCase();
+                  final userID = doc['id'].toString();
+
+                  return name.contains(_searchText.toLowerCase()) &&
+                      userID != currentUserID; // Exclude current user
+                }).toList();
+
+                return ListView.separated(
+                  itemBuilder: (_, i) {
+                    final contact = filteredContacts[i];
+                    return ListTile(
+                      leading: const CircleAvatar(
+                        // backgroundImage:
+                        // AssetImage('assets/avatar_$i.png'), // Placeholder image
+                      ),
+                      title: Text(
+                        contact['name'], // Assuming 'name' field exists in Firestore
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                    );
+                  },
+                  separatorBuilder: (_, i) {
+                    return const Divider();
+                  },
+                  itemCount: filteredContacts.length,
                 );
               },
-              separatorBuilder: (_, i) {
-                return const Divider();
-              },
-              itemCount: filteredContacts.length,
             ),
           ),
         ],

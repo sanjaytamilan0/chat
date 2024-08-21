@@ -1,7 +1,8 @@
 import 'package:chatapp/utills/colors.dart';
 import 'package:flutter/material.dart';
 
-import 'package:chatapp/register_screen/register_screen.dart';
+
+import 'package:chatapp/reverpod/auth_providers/user_auth.dart';
 
 class SplashScreenSequence extends StatefulWidget {
   const SplashScreenSequence({super.key});
@@ -13,6 +14,7 @@ class SplashScreenSequence extends StatefulWidget {
 class _SplashScreenSequenceState extends State<SplashScreenSequence> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  final auth = UserAuth();
 
   @override
   void initState() {
@@ -26,22 +28,43 @@ class _SplashScreenSequenceState extends State<SplashScreenSequence> {
   }
 
   void _skip() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const RegisterScreen()),
-    );
+    if (auth.auth.currentUser != null) {
+
+        Navigator.of(context).pushReplacementNamed('/home');
+
+    } else {
+        Navigator.of(context).pushReplacementNamed('/login');
+        return;
+
+    }
   }
 
   void _nextPage() {
     if (_currentPage < 2) {
+
+      if (auth.auth.currentUser != null) {
+        if (_currentPage == 2) {
+          Navigator.of(context).pushReplacementNamed('/home');
+        }
+      } else {
+
+        if (_currentPage == 2) {
+          Navigator.of(context).pushReplacementNamed('/login');
+          return;
+        }
+      }
+
+      // Move to the next page
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.ease,
       );
     } else {
+      // Handle the skip action
       _skip();
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

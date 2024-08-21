@@ -1,122 +1,99 @@
-import 'package:chatapp/utills/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class ChatPersonScreen extends StatefulWidget {
-  final String i;
-  const ChatPersonScreen({super.key, required this.i});
+class ChatPersonScreen extends StatelessWidget {
+  final String chatId;
+  final String otherUserName;
 
-  @override
-  State<ChatPersonScreen> createState() => _ChatPersonScreenState();
-}
+  ChatPersonScreen({required this.chatId, required this.otherUserName});
 
-class _ChatPersonScreenState extends State<ChatPersonScreen> {
+  final TextEditingController _messageController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: AppColors.lightPink,
-        leading: const CircleAvatar(
-          backgroundImage: AssetImage(
-              'assets/profile_picture.png'), // Replace with the actual image asset or network image
-        ),
-        title: Text(" ${widget.i}"),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.call),
-            onPressed: () {
-              // Call action
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.videocam),
-            onPressed: () {
-              // Video call action
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.more_vert),
-            onPressed: () {
-              // More options action
-            },
-          ),
-        ],
-      ),
-      body: Stack(
+      appBar: AppBar(title: Text(otherUserName)),
+      body: Column(
         children: [
-          Container(
-            color: Colors.tealAccent.withOpacity(0.1), // Chat background color
-          ),
-          Column(
-            children: [
-              Expanded(
-                child: ListView(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 20),
-                  children: [
-                    _buildChatBubble("Hello!", true),
-                    _buildChatBubble("How are you?", true),
-                    _buildChatBubble("I'm fine, thank you.", false),
-                    _buildChatBubble("What's up?", true),
-                  ],
-                ),
-              ),
-              _buildMessageInput(),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChatBubble(String message, bool isSender) {
-    return Align(
-      alignment: isSender ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-        margin: const EdgeInsets.symmetric(vertical: 5),
-        decoration: BoxDecoration(
-          color: isSender ? AppColors.lightPink : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          message,
-          style: TextStyle(
-            color: isSender ? Colors.white : Colors.black,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMessageInput() {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Row(
-        children: [
-          IconButton(
-            icon: Icon(Icons.camera_alt),
-            onPressed: () {
-              // Camera action
-            },
-          ),
           Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Type a message',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('chats')
+                  .doc(chatId)
+                  .collection('messages')
+                  .orderBy('timestamp', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return const Center(child: Text('Something went wrong'));
+                }
+
+                final messages = snapshot.data?.docs ?? [];
+
+                return ListView.builder(
+                  reverse: true,
+                  itemCount: messages.length,
+                  itemBuilder: (_, i) {
+                    final message = messages[i];
+                    final isMe = message['senderId'] == FirebaseAuth.instance.currentUser?.uid;
+
+                    return ListTile(
+                      title: Align(
+                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                        child: Container(
+                          padding: const EdgeInsets.all(8.0),
+                          decoration: BoxDecoration(
+                            color: isMe ? Colors.blue : Colors.grey,
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: Text(
+                            message['text'],
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
             ),
           ),
-          IconButton(
-            icon: Icon(Icons.send),
-            onPressed: () {
-              // Send message action
-            },
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _messageController,
+                    decoration: const InputDecoration(labelText: 'Type a message'),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.send),
+                  onPressed: _sendMessage,
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
+  }
+
+  void _sendMessage() {
+    final text = _messageController.text;
+    if (text.isEmpty) return;
+
+    FirebaseFirestore.instance.collection('chats').doc(chatId).collection('messages').add({
+      'text': text,
+      'senderId': FirebaseAuth.instance.currentUser?.uid,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    _messageController.clear();
   }
 }

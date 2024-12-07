@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "328990507309",
+    "project_id": "call-finder-7afd6",
+    "storage_bucket": "call-finder-7afd6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:328990507309:android:62861c9aa7b7c41b9c13a4",
+        "android_client_info": {
+          "package_name": "com.example.chatapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCC2X4KYb8FY-PJn1GsZDsWb-BmF4exRlk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:328990507309:android:8bd9056325ff060e9c13a4",
+        "android_client_info": {
+          "package_name": "com.example.pushnotificationtesting"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCC2X4KYb8FY-PJn1GsZDsWb-BmF4exRlk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

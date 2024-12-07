@@ -1,3 +1,4 @@
+import 'package:chatapp/call_screen/call_attend_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:chatapp/reverpod/auth_providers/user_auth.dart';
@@ -90,6 +91,10 @@ class _ContactScreenState extends State<ContactScreen> {
                   itemBuilder: (_, i) {
                     final contact = filteredContacts[i];
                     return ListTile(
+                      onTap:(){
+                        Navigator.push(context, 
+                        MaterialPageRoute(builder: (context)=>VideoCallPage(channelId: '')));
+                      },
                       leading: const CircleAvatar(
                         // backgroundImage:
                         // AssetImage('assets/avatar_$i.png'), // Placeholder image

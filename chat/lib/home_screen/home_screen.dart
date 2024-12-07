@@ -131,8 +131,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               context: context,
               builder: (BuildContext context) {
                 return
-
-
                    AlertDialog(
                       title: const Text('Enter Your Friend\'s Email'),
                       content: TextFormField(
@@ -150,13 +148,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                       ),
                       actions: [
-                        TextButton(
-                          onPressed: () async {
-                            final enteredEmail = emailController.text.trim();
-                            await emailMatchNotifier.checkEmailMatch(context,enteredEmail);
 
-                          },
-                          child: const Text('OK'),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: const ButtonStyle(
+                              backgroundColor: WidgetStatePropertyAll(Colors.red)
+                            ),
+                            onPressed: () async {
+                              final enteredEmail = emailController.text.trim();
+                              await emailMatchNotifier.checkEmailMatch(context,enteredEmail);
+
+                            },
+                            child: const Text('OK',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontFamily: 'QuickSand'
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     );

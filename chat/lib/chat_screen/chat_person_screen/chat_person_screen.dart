@@ -1,6 +1,9 @@
+
+import 'package:chatapp/notification_service/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 class ChatPersonScreen extends StatelessWidget {
   final String chatId;
@@ -9,6 +12,8 @@ class ChatPersonScreen extends StatelessWidget {
   ChatPersonScreen({required this.chatId, required this.otherUserName});
 
   final TextEditingController _messageController = TextEditingController();
+
+  Service service = Service();
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +89,7 @@ class ChatPersonScreen extends StatelessWidget {
     );
   }
 
-  void _sendMessage() {
+  Future<void> _sendMessage() async {
     final text = _messageController.text;
     if (text.isEmpty) return;
 
@@ -93,6 +98,12 @@ class ChatPersonScreen extends StatelessWidget {
       'senderId': FirebaseAuth.instance.currentUser?.uid,
       'timestamp': FieldValue.serverTimestamp(),
     });
+       // final String? userId = await OneSignal.User.getOnesignalId();
+   // print("======================= $userId");
+
+
+
+    await service.sendNotification('Your Friend', text);
 
     _messageController.clear();
   }

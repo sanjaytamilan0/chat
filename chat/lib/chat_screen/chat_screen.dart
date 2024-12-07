@@ -50,23 +50,37 @@ class ChatScreen extends StatelessWidget {
               itemCount: friends.length,
               itemBuilder: (_, i) {
                 final friend = friends[i];
-                return ListTile(
-                  onTap: () async {
-                    // Generate chatId
-                    final chatId = _generateChatId(currentUserId!, friend.id);
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16,vertical: 8),
+                  decoration:  BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.grey,
+                        offset: Offset(0, 0.4),
+                        blurRadius: 0.2
+                      )
+                    ]
+                  ),
+                  child: ListTile(
+                    onTap: () async {
+                      // Generate chatId
+                      final chatId = _generateChatId(currentUserId!, friend.id);
 
-                    // Navigate to ChatPersonScreen
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ChatPersonScreen(
-                          chatId: chatId,
-                          otherUserName: friend['name'],
+                      // Navigate to ChatPersonScreen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatPersonScreen(
+                            chatId: chatId,
+                            otherUserName: friend['name'],
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                  title: Text(friend['name']),
+                      );
+                    },
+                    title: Text(friend['name']),
+                  ),
                 );
               },
             );
@@ -77,7 +91,6 @@ class ChatScreen extends StatelessWidget {
   }
 
   String _generateChatId(String userId1, String userId2) {
-    // This function generates a unique chat ID based on the user IDs
     return userId1.hashCode <= userId2.hashCode
         ? '${userId1}_$userId2'
         : '${userId2}_$userId1';

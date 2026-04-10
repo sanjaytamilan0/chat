@@ -1,30 +1,27 @@
+import 'package:get/get.dart';
+import '../presentation/shared/widgets/bottom_nav_bar.dart';
+import '../presentation/auth/ui/login_screen.dart';
+import '../presentation/auth/ui/register_screen.dart';
+import '../presentation/splash/ui/splash_screen.dart';
+import 'route_name.dart';
 
-import 'package:chatapp/chat_screen/chat_person_screen/chat_person_screen.dart';
-import 'package:flutter/material.dart';
-
-import 'package:chatapp/splash_screen/splash_screen.dart';
-
-import '../bottom_nav_bar.dart';
-import '../home_screen/home_screen.dart';
-import '../register_screen/login_screen/login_screen.dart';
-import '../register_screen/register_screen.dart';
-
-class RouteGenerator {
-  static Route<dynamic> onGeneratedRoute(RouteSettings settings) {
-    switch (settings.name) {
-      case '/':
-        return MaterialPageRoute(builder: (_) => const SplashScreenSequence());
-      case '/login':
-        return MaterialPageRoute(builder: (_) => const LoginScreen());
-      case '/register':
-        return MaterialPageRoute(builder: (_) => const RegisterScreen());
-      case '/home':
-        return MaterialPageRoute(builder: (_) => const BottomNavBar());
-
-      default:
-        return MaterialPageRoute(builder: (_) => Scaffold(
-          appBar: AppBar(title: const Text('error'),),
-        ));
-    }
-  }
+class AppPages {
+  static final pages = [
+    GetPage(
+      name: AppRoutes.root,
+      page: () => const SplashScreenSequence(),
+    ),
+    GetPage(
+      name: AppRoutes.login,
+      page: () => const LoginScreen(),
+    ),
+    GetPage(
+      name: AppRoutes.register,
+      page: () => const RegisterScreen(),
+    ),
+    GetPage(
+      name: AppRoutes.home,
+      page: () => const BottomNavBar(),
+    ),
+  ];
 }

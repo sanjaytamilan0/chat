@@ -19,20 +19,17 @@
   <title>chatapp</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- 
-    NOTE: Manual Agora/Iris scripts have been removed to let the agora_rtc_engine 6.3.4 
-    plugin manage its own internal assets. This prevents version shadowing conflicts.
-  -->
-
+  <!-- Agora RTC SDK for Web -->
+  <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.20.2.js"></script>
+  
   <script src="flutter.js" defer></script>
 </head>
 <body>
   <script>
-    window.addEventListener('load', function(ev) {
-      // Modern Flutter Web Loading API (Replaces deprecated loadEntrypoint)
+    window.addEventListener('load', function() {
       _flutter.loader.load({
         serviceWorkerSettings: {
-          serviceWorkerVersion: null, // Let Flutter decide the version
+          serviceWorkerVersion: null,
         },
         onEntrypointLoaded: function(engineInitializer) {
           engineInitializer.initializeEngine().then(function(appRunner) {

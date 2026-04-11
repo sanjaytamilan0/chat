@@ -4,22 +4,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:chatapp/presentation/shared/riverpod/theme_notifier.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'firebase_options.dart';
 
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  final sharedPrefs = await SharedPreferences.getInstance();
+
   if (!kIsWeb) {
     await initializeOneSignal();
   }
 
-
   runApp(
-      const ProviderScope(
-          child: MyApp())
+    ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(sharedPrefs),
+      ],
+      child: const MyApp(),
+    ),
   );
 }
 
@@ -29,8 +37,3 @@ Future<void> initializeOneSignal() async {
   OneSignal.initialize('1232990b-869e-47e2-8838-df1b20038c1a');
   OneSignal.Notifications.requestPermission(true);
 }
-
-
-
-
-

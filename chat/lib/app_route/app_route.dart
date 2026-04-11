@@ -9,7 +9,7 @@ class AppPages {
   static final pages = [
     GetPage(
       name: AppRoutes.root,
-      page: () => const SplashScreenSequence(),
+      page: () => const GhostChatSplashScreen(),
     ),
     GetPage(
       name: AppRoutes.login,

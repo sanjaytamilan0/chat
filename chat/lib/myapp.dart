@@ -1,4 +1,5 @@
 
+import 'package:chatapp/presentation/shared/riverpod/theme_notifier.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -53,10 +54,14 @@ class MyApp extends ConsumerWidget {
       );
     });
 
+    final theme = ref.watch(themeProvider);
+
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       getPages: AppPages.pages,
       initialRoute: AppRoutes.root,
+      theme: theme,
+      themeMode: ThemeMode.light, // Control via the provider ThemeData
     );
   }
 

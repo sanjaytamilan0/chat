@@ -33,171 +33,168 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final authState = ref.watch(authStateProvider);
 
-
     return Scaffold(
-      backgroundColor: AppColors.veryLightPink,
+      backgroundColor: theme.colorScheme.background,
+      appBar: AppBar(
+        title: const Text("Create Account"),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Get.back(),
+        ),
+      ),
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-                flex: 2,
-                child: Container(
-                  padding: const EdgeInsets.only(left: 5),
-                  width: double.maxFinite,
-                  decoration: const BoxDecoration(
-                      color: AppColors.lightPink,
-                      borderRadius: BorderRadius.only(
-                          bottomRight: Radius.circular(20),
-                          bottomLeft: Radius.circular(20))),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 20),
+              Text(
+                "Join the Elite",
+                textAlign: TextAlign.center,
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onBackground,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Create an account to get started",
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 40),
+
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Form(
+                  key: _formKey,
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back),
-                        onPressed: () {
-                          Get.back();
-                        },
-                      ),
-                      const Text(
-                        "Register",
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                      TextFormField(
+                        controller: _nameController,
+                        focusNode: name,
+                        onFieldSubmitted: (_) => FocusScope.of(context).requestFocus(email),
+                        style: theme.textTheme.bodyLarge,
+                        decoration: InputDecoration(
+                          labelText: 'Full Name',
+                          prefixIcon: const Icon(Icons.person_outline),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        "Fill up your details to register",
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white70,
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: _emailController,
+                        focusNode: email,
+                        onFieldSubmitted: (_) => FocusScope.of(context).requestFocus(password),
+                        keyboardType: TextInputType.emailAddress,
+                        style: theme.textTheme.bodyLarge,
+                        decoration: InputDecoration(
+                          labelText: 'Email Address',
+                          prefixIcon: const Icon(Icons.email_outlined),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: _passwordController,
+                        focusNode: password,
+                        obscureText: true,
+                        style: theme.textTheme.bodyLarge,
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          suffixIcon: const Icon(Icons.visibility_off_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: theme.colorScheme.primary,
+                            foregroundColor: theme.colorScheme.onPrimary,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          onPressed: authState.isLoading
+                              ? null
+                              : () async {
+                                  if (_formKey.currentState?.validate() ?? false) {
+                                    await ref.read(authStateProvider.notifier).signUp(
+                                          _emailController.text,
+                                          _passwordController.text,
+                                          _nameController.text,
+                                        );
+                                  }
+                                },
+                          child: authState.isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Text(
+                                  "Create Account",
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                ),
                         ),
                       ),
                     ],
                   ),
-                )),
-            Expanded(
-              flex: 6,
-              child: Container(
-                padding: const EdgeInsets.all(10.0),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Form(
-                  key: _formKey,
-                  child: Stack(children: [
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        TextFormField(
-                          focusNode: name,
-                          onFieldSubmitted: (s) {
-                            FocusScope.of(context).requestFocus(email);
-                          },
-                          controller: _nameController,
-                          decoration: InputDecoration(
-                            labelText: 'name',
-                            hintText: 'Enter your name',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        TextFormField(
-                          focusNode: email,
-                          onFieldSubmitted: (s) {
-                            FocusScope.of(context).requestFocus(password);
-                          },
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: InputDecoration(
-                            labelText: 'Email',
-                            hintText: 'Enter your email',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        TextFormField(
-                          focusNode: password,
-                          controller: _passwordController,
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            labelText: 'Password',
-                            hintText: 'Enter your password',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            suffixIcon: const Icon(Icons.visibility_off),
-                          ),
-                        ),
-                        const SizedBox(height: 30),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.all(16.0),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              backgroundColor: AppColors.lightPink,
-                            ),
-                            onPressed: authState.isLoading
-                                ? null
-                                : () async {
-                                    if (_formKey.currentState?.validate() ?? false) {
-                                      await ref.read(authStateProvider.notifier).signUp(
-                                            _emailController.text,
-                                            _passwordController.text,
-                                            _nameController.text,
-                                          );
-                                    }
-                                  },
-                            child: authState.isLoading
-                                ? const CircularProgressIndicator(color: Colors.white)
-                                : const Text(
-                                    "Register",
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(20),
-                        child: TextButton(
-                          onPressed: () {
-                            Get.toNamed(AppRoutes.login);
-                          },
-                          child: const Text(
-                            "Already have an account? Log in",
-                            style: TextStyle(
-                              color: AppColors.offWhite,
-                            ),
-                          ),
-                        ),
-                      ),
-                    )
-                  ]),
                 ),
               ),
-            ),
-          ],
+              
+              const SizedBox(height: 40),
+              
+              TextButton(
+                onPressed: () {
+                  Get.toNamed(AppRoutes.login);
+                },
+                child: RichText(
+                  text: TextSpan(
+                    style: theme.textTheme.bodyMedium,
+                    children: [
+                      TextSpan(
+                        text: "Already have an account? ",
+                        style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                      ),
+                      TextSpan(
+                        text: "Log In",
+                        style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

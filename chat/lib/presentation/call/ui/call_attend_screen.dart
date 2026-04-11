@@ -24,6 +24,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
   int _remoteUid = 0;
   bool _isJoined = false;
   bool _loading = true;
+  String _statusMessage = "Initializing...";
   
   // Controls state
   bool _isMuted = false;
@@ -62,25 +63,46 @@ class _VideoCallPageState extends State<VideoCallPage> {
       _engine!.registerEventHandler(RtcEngineEventHandler(
         onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
           debugPrint("local user ${connection.localUid} joined");
-          setState(() {
-            _isJoined = true;
-            _loading = false;
-          });
+          if (mounted) {
+            setState(() {
+              _isJoined = true;
+              _loading = false;
+              _statusMessage = "Joined";
+            });
+          }
+        },
+        onConnectionStateChanged: (RtcConnection connection, ConnectionStateType state, ConnectionChangedReasonType reason) {
+          debugPrint("Connection state changed: $state, reason: $reason");
+          if (mounted) {
+            setState(() {
+              _statusMessage = state.name.replaceAll('connectionState', '');
+            });
+            if (state == ConnectionStateType.connectionStateFailed) {
+              _handleInitError("Connection failed: $reason");
+            }
+          }
         },
         onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
           debugPrint("DEBUG: remote user $remoteUid joined the channel");
-          setState(() {
-            _remoteUid = remoteUid;
-          });
+          if (mounted) {
+            setState(() {
+              _remoteUid = remoteUid;
+            });
+          }
         },
         onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
           debugPrint("DEBUG: remote user $remoteUid left channel. Reason: $reason");
-          setState(() {
-            _remoteUid = 0;
-          });
+          if (mounted) {
+            setState(() {
+              _remoteUid = 0;
+            });
+          }
         },
         onError: (ErrorCodeType err, String msg) {
           debugPrint('Agora error: $err, $msg');
+          if (mounted) {
+            _handleInitError("$err: $msg");
+          }
         },
       ));
 
@@ -88,8 +110,8 @@ class _VideoCallPageState extends State<VideoCallPage> {
       await _engine!.startPreview();
 
       await _engine!.joinChannel(
-        token: '',
-        channelId: widget.channelId,
+        token: AgoraConfig.token,
+        channelId: "videochat",
         uid: 0,
         options: const ChannelMediaOptions(
           publishCameraTrack: true,
@@ -176,8 +198,9 @@ class _VideoCallPageState extends State<VideoCallPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.black, // Still black for video contrast
       appBar: AppBar(
         title: Text(widget.remoteName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
@@ -196,11 +219,11 @@ class _VideoCallPageState extends State<VideoCallPage> {
                   width: 120,
                   height: 160,
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.white, width: 2),
-                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(14),
                     child: _remoteVideo(),
                   ),
                 ),
@@ -208,76 +231,97 @@ class _VideoCallPageState extends State<VideoCallPage> {
             
             if (_remoteUid != 0)
               Positioned(
-                top: 10,
-                left: 10,
+                top: 20,
+                left: 20,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(20)),
-                  child: const Text("CONNECTED", style: TextStyle(color: Colors.white, fontSize: 10)),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text("CONNECTED", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
                 ),
               ),
 
             // Call Controls Overlay
             Positioned(
-              bottom: 40,
+              bottom: 50,
               left: 0,
               right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  FloatingActionButton(
-                    heroTag: "mute_mic",
-                    mini: true,
-                    backgroundColor: _isMuted ? Colors.white : Colors.white24,
-                    child: Icon(_isMuted ? Icons.mic_off : Icons.mic, 
-                               color: _isMuted ? Colors.red : Colors.white),
-                    onPressed: _onToggleMute,
-                  ),
-                  
-                  FloatingActionButton(
-                    heroTag: "switch_camera",
-                    mini: true,
-                    backgroundColor: Colors.white24,
-                    child: const Icon(Icons.cameraswitch, color: Colors.white),
-                    onPressed: _onSwitchCamera,
-                  ),
-
-                  FloatingActionButton(
-                    heroTag: "end_call",
-                    backgroundColor: Colors.red,
-                    child: const Icon(Icons.call_end, size: 30, color: Colors.white),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                  
-                  FloatingActionButton(
-                    heroTag: "toggle_video",
-                    mini: true,
-                    backgroundColor: !_isVideoEnabled ? Colors.white : Colors.white24,
-                    child: Icon(_isVideoEnabled ? Icons.videocam : Icons.videocam_off, 
-                               color: !_isVideoEnabled ? Colors.red : Colors.white),
-                    onPressed: _onToggleVideo,
-                  ),
-                ],
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(32),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildControlButton(
+                      icon: _isMuted ? Icons.mic_off : Icons.mic,
+                      color: _isMuted ? Colors.red : Colors.white,
+                      onPressed: _onToggleMute,
+                      label: "Mute",
+                    ),
+                    _buildControlButton(
+                      icon: Icons.cameraswitch,
+                      color: Colors.white,
+                      onPressed: _onSwitchCamera,
+                      label: "Switch",
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                        child: const Icon(Icons.call_end, size: 32, color: Colors.white),
+                      ),
+                    ),
+                    _buildControlButton(
+                      icon: _isVideoEnabled ? Icons.videocam : Icons.videocam_off,
+                      color: !_isVideoEnabled ? Colors.red : Colors.white,
+                      onPressed: _onToggleVideo,
+                      label: "Video",
+                    ),
+                  ],
+                ),
               ),
             ),
 
             if (_loading)
-               const Center(
+                Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircularProgressIndicator(color: Colors.teal),
-                    SizedBox(height: 20),
-                    Text("Initializing Call...", style: TextStyle(color: Colors.white)),
+                    CircularProgressIndicator(color: theme.colorScheme.primary),
+                    const SizedBox(height: 24),
+                    Text(_statusMessage, style: const TextStyle(color: Colors.white, fontSize: 16)),
                   ],
                 ),
               ),
             if (!_isVideoEnabled && !_loading)
-              const Center(
-                child: Text("Your video is off", 
-                           style: TextStyle(color: Colors.white, fontSize: 18)),
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.videocam_off, size: 64, color: Colors.white.withOpacity(0.2)),
+                    const SizedBox(height: 16),
+                    const Text("Your video is off", 
+                               style: TextStyle(color: Colors.white, fontSize: 18)),
+                  ],
+                ),
               ),
           ],
         ),
@@ -285,8 +329,21 @@ class _VideoCallPageState extends State<VideoCallPage> {
     );
   }
 
+  Widget _buildControlButton({required IconData icon, required Color color, required VoidCallback onPressed, required String label}) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: Icon(icon, color: color, size: 28),
+          onPressed: onPressed,
+        ),
+        Text(label, style: const TextStyle(color: Colors.white, fontSize: 10)),
+      ],
+    );
+  }
+
   Widget _localVideo() {
-    if (_engine != null && _isJoined && _isVideoEnabled) {
+    if (_engine != null && _isVideoEnabled) {
       return AgoraVideoView(
         controller: VideoViewController(
           rtcEngine: _engine!,
